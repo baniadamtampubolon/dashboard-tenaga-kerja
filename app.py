@@ -34,13 +34,13 @@ is_pt   = "PT"  in dataset_choice
 is_pyb  = "PYB" in dataset_choice
 
 if is_main:
-    df_puk = load_data("Database/PUK-2018-2025.xlsx")
+    df_puk = load_data("Database/PUK-2018-2025-ver2.xlsx")
     df_ak  = load_data("Database/AK-2018-2025.xlsx")
     df_pt  = load_data("Database/PT-2018-2025.xlsx")
     df_pyb = load_data("Database/PYB-2018-2025.xlsx")
     df = df_puk
 else:
-    if is_puk:   DATA_FILE = "Database/PUK-2018-2025.xlsx"
+    if is_puk:   DATA_FILE = "Database/PUK-2018-2025-ver2.xlsx"
     elif is_ak:  DATA_FILE = "Database/AK-2018-2025.xlsx"
     elif is_pt:  DATA_FILE = "Database/PT-2018-2025.xlsx"
     else:        DATA_FILE = "Database/PYB-2018-2025.xlsx"
@@ -223,7 +223,7 @@ if data.empty:
 
 # ─── Header ──────────────────────────────────────────────────────────────────────
 dataset_labels = {
-    "main": "Ringkasan Eksekutif Ketenagakerjaan",
+    "main": "Ringkasan Data Ketenagakerjaan",
     "puk":  "Penduduk Usia Kerja (PUK)",
     "ak":   "Angkatan Kerja (AK)",
     "pt":   "Pengangguran Terbuka (PT)",

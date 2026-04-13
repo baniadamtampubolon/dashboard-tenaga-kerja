@@ -18,9 +18,15 @@ def load_data(file_path):
     df['nm_prov'] = df['nm_prov'].fillna('NASIONAL')
     df['nm_kabkot'] = df['nm_kabkot'].fillna('-')
     
-    # Handle missing 'total' column in datasets like AK
+    # Convert all data columns to numeric (skip text/identifier columns)
+    text_cols = {'thn', 'lvl_wil', 'kd_prov', 'nm_prov', 'kd_kabkot', 'nm_kabkot'}
+    for col in df.columns:
+        if col not in text_cols:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    
+    # Handle missing 'total' column in datasets like AK, PT, PYB, PUK-ver2
     if 'total' not in df.columns and 'jk_lk' in df.columns and 'jk_pr' in df.columns:
-        df['total'] = pd.to_numeric(df['jk_lk'], errors='coerce').fillna(0) + pd.to_numeric(df['jk_pr'], errors='coerce').fillna(0)
+        df['total'] = df['jk_lk'] + df['jk_pr']
         
     return df
 
