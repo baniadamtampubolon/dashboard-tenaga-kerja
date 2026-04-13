@@ -1,0 +1,103 @@
+# arti nama kolom:
+
+# Untuk PUK, AK, PT, PYB
+thn = tahun
+lvl_wil = level wilayah
+kd_prov = kode provinsi	
+nm_prov = nama provinsi	
+kd_kabkot = kode kabupaten kota	
+nm_kabkot = nama kabupaten kota	
+kls_kota = kelas kota	
+kls_desa = kelas desa	
+jk_lk = jenis kelamin laki-laki	
+jk_pr = jenis kelamin perempuan	
+ku_1519	= kelompok umur 15-19 tahun
+ku_2024	= kelompok umur 20-24 tahun
+ku_2529	= kelompok umur 25-29 tahun
+ku_3034	= kelompok umur 30-34 tahun
+ku_3539	= kelompok umur 35-39 tahun
+ku_4044	= kelompok umur 40-44 tahun
+ku_4549	= kelompok umur 45-49 tahun
+ku_5054	= kelompok umur 50-54 tahun
+ku_5559	= kelompok umur 55-59 tahun
+ku_6064	= kelompok umur 60-64 tahun
+ku_65+	= kelompok umur 65 tahun ke atas
+pd_sd	= pendidikan sekolah dasar
+pd_smp	= pendidikan sekolah menengah pertama
+pd_smau	= pendidikan sekolah menengah atas umum
+pd_smak	= pendidikan sekolah menengah atas kejuruan
+pd_dipl	= pendidikan diploma
+pd_univ	= pendidikan universitas
+keg_pyb	= kegiatan penduduk yang bekerja
+keg_pt	= kegiatan pengangguran terbuka
+keg_sklh	= kegiatan sekolah
+keg_mrt	= kegiatan mengurus rumah tangga
+keg_lain = kegiatan lainnya
+
+# Untuk PT
+kat_mp = kategori mencari pekerjaan
+kat_mu = kategori mempersiapkan usaha
+kat_pa = kategori putus asa
+kat_bmb = kategori diterima tapi belum bekerja
+
+# Untuk PYB
+# Lapus = Lapangan Usaha
+lapus_A = Pertanian, kehutanan, dan perikanan
+lapus_B = Pertambangan dan penggalian
+lapus_C = Industri pengolahan
+lapus_D = Pengadaan listrik, gas, uap/air panas dan udara dingin
+lapus_E = Pengadaan air, pengelolaan limbah, pengelolaan dan daur ulang sampah, serta remediasi lingkungan
+lapus_F = Konstruksi
+lapus_G = Perdagangan besar dan eceran, reparasi mobil dan sepeda motor
+lapus_H = Transportasi dan pergudangan	
+lapus_I = Penyediaan akomodasi dan makan minum	
+lapus_J = Informasi dan komunikasi	
+lapus_K = Jasa keuangan dan asuransi	
+lapus_L = Real estat	
+lapus_MN = Jasa profesional, ilmiah, dan teknis
+lapus_O = Administrasi	
+lapus_P = Pendidikan	
+lapus_Q = Jasa kesehatan dan kegiatan sosial	
+lapus_RSTU = Jasa lainnya
+
+# Jabatan
+jab_0 = TNI/POLRI
+jab_1 = Manajer	
+jab_2 = Profesional	
+jab_3 = Teknisi dan Asisten Profesional
+jab_4 =	Tenaga Tata Usaha
+jab_5 = Tenaga Jasa dan Tenaga Penjualan	
+jab_6 = Pekerja Terampil Pertanian, Kehutanan, dan Perikanan	
+jab_7 = Pekerja Pengolah, Pengrajinan, dan Umum	
+jab_8 = Operator Mesin dan Perakit	
+jab_9 = Tenaga Kebersihan dan Tenaga Kasar 
+
+# Status Pekerjaan
+sta_1 = Berusaha Sendiri	
+sta_2 = Berusaha Dibantu Buruh Tidak Tetap/Buruh Tidak Dibayar
+sta_3 = Berusaha Dibantu Buruh Tetap/Buruh Dibayar
+sta_4 = Buruh/Karyawan/Pegawai	
+sta_5 = Pekerja Bebas di Pertanian	
+sta_6 = Pekerja Bebas non Pertanian	
+sta_7 = Pekerja Keluarga/Tidak Dibayar
+
+# Jam Kerja (kategori jam ini di abaikan saja, gunakan kategori jam kerja dalam 1 minggu)
+# jam_0	
+# jam_14	
+# jam_59	
+# jam_1014	
+# jam_1519	
+# jam_2024	
+# jam_2534	
+# jam_3544	
+# jam_4554	
+# jam_5559	
+# jam_6074	
+# jam_75+	
+
+# Jam Kerja (dalam 1 minggu)
+jam_114	
+jam_1534	
+jam_3540	
+jam_4148	
+jam_>48
