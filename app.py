@@ -46,11 +46,17 @@ if is_main:
     df_pt  = load_data("Database/PT-2018-2025-ver2.xlsx")
     df_pyb = load_data("Database/PYB-2018-2025-ver3.xlsx")
     df = df_puk
-else:
-    if is_puk:   df = df_geo
-    elif is_ak:  df = load_data("Database/AK-2018-2025-ver2.xlsx")
-    elif is_pt:  df = load_data("Database/PT-2018-2025-ver2.xlsx")
-    else:        df = load_data("Database/PYB-2018-2025-ver3.xlsx")
+elif is_puk:
+    df_puk = df_geo
+    df_pt  = load_data("Database/PT-2018-2025-ver2.xlsx")
+    df_pyb = load_data("Database/PYB-2018-2025-ver3.xlsx")
+    df = df_puk
+elif is_ak:  
+    df = load_data("Database/AK-2018-2025-ver2.xlsx")
+elif is_pt:  
+    df = load_data("Database/PT-2018-2025-ver2.xlsx")
+else:        
+    df = load_data("Database/PYB-2018-2025-ver3.xlsx")
 
 # ─── Theme Palette ───────────────────────────────────────────────────────────────
 
@@ -221,6 +227,10 @@ if is_main:
     data_pt  = filter_data(df_pt,  selected_year, selected_level, selected_prov, selected_kabkot)
     data_pyb = filter_data(df_pyb, selected_year, selected_level, selected_prov, selected_kabkot)
     data = data_puk
+elif is_puk:
+    data = filter_data(df_puk, selected_year, selected_level, selected_prov, selected_kabkot)
+    data_pt  = filter_data(df_pt,  selected_year, selected_level, selected_prov, selected_kabkot)
+    data_pyb = filter_data(df_pyb, selected_year, selected_level, selected_prov, selected_kabkot)
 else:
     data = filter_data(df, selected_year, selected_level, selected_prov, selected_kabkot)
 
@@ -341,11 +351,11 @@ if is_main:
     t_pt  = _trend(df_pt).groupby('thn')['total'].sum().reset_index()
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=t_puk['thn'], y=t_puk['total'], name="PUK", line=dict(color='#AED6F1', width=2, dash='dot', shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=t_ak['thn'],  y=t_ak['total'],  name="AK",  line=dict(color='#5DADE2', width=2, dash='dot', shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=t_pyb['thn'], y=t_pyb['total'], name="Bekerja (PYB)", line=dict(color='#005BAB', width=3, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=6),
+    fig.add_trace(go.Scatter(x=t_puk['thn'], y=t_puk['total'], name="PUK", line=dict(color='#AED6F1', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_ak['thn'],  y=t_ak['total'],  name="AK",  line=dict(color='#5DADE2', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_pyb['thn'], y=t_pyb['total'], name="Bekerja (PYB)", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
                              fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
-    fig.add_trace(go.Scatter(x=t_pt['thn'],  y=t_pt['total'],  name="Penganggur (PT)", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_pt['thn'],  y=t_pt['total'],  name="Penganggur (PT)", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
     apply_chart(fig, height=420)
     fig.update_layout(title=dict(text=f"📈 Tren Ketenagakerjaan — {loc_name} (2018–2025)", font=dict(size=15)))
     st.plotly_chart(fig, use_container_width=True)
@@ -364,13 +374,13 @@ total_val = data['total'].sum()
 # ── KPI Cards ────────────────────────────────────────────────────────────────────
 if is_puk:
     c1, c2, c3, c4 = st.columns(4)
-    working    = data.get('keg_pyb', pd.Series([0])).sum()
-    unemployed = data.get('keg_pt',  pd.Series([0])).sum()
-    others     = data.get('keg_lain', pd.Series([0])).sum()
-    c1.metric("Total PUK",            f"{total_val:,.0f}")
+    working    = data_pyb['total'].sum()
+    unemployed = data_pt['total'].sum()
+    others     = max(0, total_val - (working + unemployed))
+    c1.metric("Total PUK",             f"{total_val:,.0f}")
     c2.metric("Penduduk Bekerja",      f"{working:,.0f}")
     c3.metric("Pengangguran Terbuka",  f"{unemployed:,.0f}")
-    c4.metric("Kegiatan Lainnya",      f"{others:,.0f}")
+    c4.metric("Bukan Angkatan Kerja",  f"{others:,.0f}")
 elif is_pt:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Pengangguran",      f"{total_val:,.0f}")
@@ -446,17 +456,25 @@ with r2c1:
 
 if is_puk:
     with r2c2:
+        working = data_pyb['total'].sum()
+        unemployed = data_pt['total'].sum()
+        sekolah = data.get('keg_sklh', pd.Series([0])).sum()
+        mrt = data.get('keg_mrt', pd.Series([0])).sum()
+        lain_lain = max(0, total_val - (working + unemployed + sekolah + mrt))
+        
         act_map = {
-            'keg_pyb': 'Bekerja', 'keg_pt': 'Pengangguran',
-            'keg_sklh': 'Sekolah', 'keg_mrt': 'Rumah Tangga', 'keg_lain': 'Lainnya',
+            'Bekerja (Dari PYB)': working,
+            'Pengangguran (Dari PT)': unemployed,
+            'Sekolah': sekolah,
+            'Mengurus Rumah Tangga': mrt,
+            'Lainnya': lain_lain,
         }
-        act_vals = [data[c].sum() if c in data.columns else 0 for c in act_map]
-        adf2 = pd.DataFrame({'Aktivitas': list(act_map.values()), 'Jumlah': act_vals})
+        adf2 = pd.DataFrame({'Aktivitas': list(act_map.keys()), 'Jumlah': list(act_map.values())})
         fig = px.pie(adf2, values='Jumlah', names='Aktivitas', hole=0.55, color_discrete_sequence=BLUE_SEQ)
         fig.update_traces(textposition='inside', textinfo='percent+label', textfont_size=11,
                           hovertemplate='<b>%{label}</b><br>Jumlah: %{value:,.0f}<extra></extra>')
         apply_chart(fig)
-        fig.update_layout(title=dict(text="📋 Status Aktivitas", font=dict(size=14)), showlegend=False)
+        fig.update_layout(title=dict(text="📋 Status Aktivitas (Cross-Reference)", font=dict(size=14)), showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
 elif is_pt:
@@ -551,39 +569,45 @@ elif is_pyb:
 st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
 
 # ── Trend Chart ──────────────────────────────────────────────────────────────────
-reg_df = df.copy()
-if selected_level == "Nasional":
-    trend_df = reg_df[reg_df['lvl_wil'] == 'nasional']
-elif selected_level == "Provinsi":
-    trend_df = reg_df[(reg_df['lvl_wil'] == 'provinsi') & (reg_df['nm_prov'] == selected_prov)]
-elif selected_level == "Kabupaten/Kota":
-    trend_df = reg_df[(reg_df['lvl_wil'].isin(['kabupaten', 'kota'])) & (reg_df['nm_kabkot'] == selected_kabkot)]
+def _get_trend(df_input):
+    if selected_level == "Nasional":
+        return df_input[df_input['lvl_wil'] == 'nasional']
+    elif selected_level == "Provinsi":
+        return df_input[(df_input['lvl_wil'] == 'provinsi') & (df_input['nm_prov'] == selected_prov)]
+    elif selected_level == "Kabupaten/Kota":
+        return df_input[(df_input['lvl_wil'].isin(['kabupaten', 'kota'])) & (df_input['nm_kabkot'] == selected_kabkot)]
+    return df_input
+
+trend_df = _get_trend(df)
 
 fig = go.Figure()
 
 if is_puk:
-    ts = trend_df.groupby('thn')[['total', 'keg_pyb', 'keg_pt']].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'],   name="Total PUK",   line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['keg_pyb'], name="Bekerja",      line=dict(color='#005BAB', width=3, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=6),
+    ts_puk = trend_df.groupby('thn')['total'].sum().reset_index()
+    ts_pyb = _get_trend(df_pyb).groupby('thn')['total'].sum().reset_index()
+    ts_pt  = _get_trend(df_pt).groupby('thn')['total'].sum().reset_index()
+
+    fig.add_trace(go.Scatter(x=ts_puk['thn'], y=ts_puk['total'],   name="Total PUK",   line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts_pyb['thn'], y=ts_pyb['total'], name="Bekerja (PYB)", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
                              fill='tozeroy', fillcolor='rgba(0,91,171,0.06)'))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['keg_pt'],  name="Pengangguran", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts_pt['thn'], y=ts_pt['total'],  name="Pengangguran (PT)", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
     title = f"📈 Tren PUK — {loc_name}"
 elif is_pt:
     ts = trend_df.groupby('thn')[['total', 'kat_mp', 'kat_mu', 'kat_pa', 'kat_bmb']].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'],  name="Total PT",             line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mp'], name="Mencari Pekerjaan",     line=dict(color='#005BAB', width=3, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mu'], name="Mempersiapkan Usaha",   line=dict(color='#2E86DE', width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=4)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_pa'], name="Putus Asa",             line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=4)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_bmb'],name="Diterima Belum Bekerja",line=dict(color=ACCENT_AMBER, width=2, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'],  name="Total PT",             line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mp'], name="Mencari Pekerjaan",     line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mu'], name="Mempersiapkan Usaha",   line=dict(color='#2E86DE', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_pa'], name="Putus Asa",             line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_bmb'],name="Diterima Belum Bekerja",line=dict(color=ACCENT_AMBER, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
     title = f"📈 Tren PT — {loc_name}"
 elif is_pyb:
     ts = trend_df.groupby('thn')['total'].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total PYB", line=dict(color='#005BAB', width=3, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=6),
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total PYB", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
                              fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
     title = f"📈 Tren Penduduk Bekerja — {loc_name}"
 else:
     ts = trend_df.groupby('thn')['total'].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total AK", line=dict(color='#005BAB', width=3, shape='spline', smoothing=1.3), mode='lines+markers', marker=dict(size=6),
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total AK", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
                              fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
     title = f"📈 Tren Angkatan Kerja — {loc_name}"
 
