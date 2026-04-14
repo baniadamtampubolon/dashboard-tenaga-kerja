@@ -23,6 +23,7 @@ def load_data(file_path):
     for col in df.columns:
         if col not in text_cols:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
     
     # Use the dataset's own total column (PUK, AK, PYB, PT) if available
     # Each ver2 dataset has a dedicated total column named after itself

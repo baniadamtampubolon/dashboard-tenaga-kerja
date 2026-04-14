@@ -44,13 +44,13 @@ if is_main:
     df_puk = df_geo
     df_ak  = load_data("Database/AK-2018-2025-ver2.xlsx")
     df_pt  = load_data("Database/PT-2018-2025-ver2.xlsx")
-    df_pyb = load_data("Database/PYB-2018-2025-ver2.xlsx")
+    df_pyb = load_data("Database/PYB-2018-2025-ver3.xlsx")
     df = df_puk
 else:
     if is_puk:   df = df_geo
     elif is_ak:  df = load_data("Database/AK-2018-2025-ver2.xlsx")
     elif is_pt:  df = load_data("Database/PT-2018-2025-ver2.xlsx")
-    else:        df = load_data("Database/PYB-2018-2025-ver2.xlsx")
+    else:        df = load_data("Database/PYB-2018-2025-ver3.xlsx")
 
 # ─── Theme Palette ───────────────────────────────────────────────────────────────
 
