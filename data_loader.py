@@ -24,9 +24,20 @@ def load_data(file_path):
         if col not in text_cols:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     
-    # Handle missing 'total' column in datasets like AK, PT, PYB, PUK-ver2
-    if 'total' not in df.columns and 'jk_lk' in df.columns and 'jk_pr' in df.columns:
-        df['total'] = df['jk_lk'] + df['jk_pr']
+    # Use the dataset's own total column (PUK, AK, PYB, PT) if available
+    # Each ver2 dataset has a dedicated total column named after itself
+    dataset_total_cols = ['PUK', 'AK', 'PYB', 'PT']
+    total_found = False
+    for tc in dataset_total_cols:
+        if tc in df.columns:
+            df['total'] = df[tc]
+            total_found = True
+            break
+    
+    # Fallback: calculate from jk_lk + jk_pr if no dedicated total column
+    if not total_found and 'total' not in df.columns:
+        if 'jk_lk' in df.columns and 'jk_pr' in df.columns:
+            df['total'] = df['jk_lk'] + df['jk_pr']
         
     return df
 

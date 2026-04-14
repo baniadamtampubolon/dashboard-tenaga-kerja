@@ -12,9 +12,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── Sidebar: Logo + Config ─────────────────────────────────────────────────────
+# ─── Sidebar Layout (visual order: Logo → Toggle → Filter → Dataset) ──────────
 with st.sidebar:
     st.image("kemnaker-logo.png", use_container_width=True)
+    is_dark = st.toggle("🌙 Mode Gelap", value=False)
+    st.markdown("---")
+    st.markdown("### 🗺️ Filter Wilayah")
+    filter_placeholder = st.container()  # will be populated after data loads
+    st.markdown("---")
     st.markdown("### ⚙️ Konfigurasi Dashboard")
     dataset_choice = st.radio(
         "Pilih Dataset",
@@ -24,7 +29,6 @@ with st.sidebar:
          "Pengangguran Terbuka (PT)",
          "Penduduk yang Bekerja (PYB)"],
     )
-    theme_choice = st.radio("Mode Tampilan", ["Terang ☀️", "Gelap 🌙"], horizontal=True)
 
 # ─── Data Source Setup ───────────────────────────────────────────────────────────
 is_main = "Ringkasan" in dataset_choice
@@ -33,23 +37,22 @@ is_ak   = "AK"  in dataset_choice
 is_pt   = "PT"  in dataset_choice
 is_pyb  = "PYB" in dataset_choice
 
+# Always load PUK as geography reference (consistent province/kabkot lists)
+df_geo = load_data("Database/PUK-2018-2025-ver2.xlsx")
+
 if is_main:
-    df_puk = load_data("Database/PUK-2018-2025-ver2.xlsx")
-    df_ak  = load_data("Database/AK-2018-2025.xlsx")
-    df_pt  = load_data("Database/PT-2018-2025.xlsx")
-    df_pyb = load_data("Database/PYB-2018-2025.xlsx")
+    df_puk = df_geo
+    df_ak  = load_data("Database/AK-2018-2025-ver2.xlsx")
+    df_pt  = load_data("Database/PT-2018-2025-ver2.xlsx")
+    df_pyb = load_data("Database/PYB-2018-2025-ver2.xlsx")
     df = df_puk
 else:
-    if is_puk:   DATA_FILE = "Database/PUK-2018-2025-ver2.xlsx"
-    elif is_ak:  DATA_FILE = "Database/AK-2018-2025.xlsx"
-    elif is_pt:  DATA_FILE = "Database/PT-2018-2025.xlsx"
-    else:        DATA_FILE = "Database/PYB-2018-2025.xlsx"
-    df = load_data(DATA_FILE)
-
-geo_structure = get_geo_structure(df)
+    if is_puk:   df = df_geo
+    elif is_ak:  df = load_data("Database/AK-2018-2025-ver2.xlsx")
+    elif is_pt:  df = load_data("Database/PT-2018-2025-ver2.xlsx")
+    else:        df = load_data("Database/PYB-2018-2025-ver2.xlsx")
 
 # ─── Theme Palette ───────────────────────────────────────────────────────────────
-is_dark = "Gelap" in theme_choice
 
 if not is_dark:
     main_bg        = "#F0F4F8"
@@ -188,19 +191,23 @@ p, span, div {{
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Sidebar: Filters ───────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 🗺️ Filter Wilayah")
-    selected_year = st.selectbox("Pilih Tahun", sorted(df['thn'].unique(), reverse=True))
+# ─── Populate Filter Placeholder (now that data is loaded) ─────────────────────
+with filter_placeholder:
+    selected_year = st.selectbox("Pilih Tahun", sorted(df_geo['thn'].unique(), reverse=True), key="filter_year")
     level_options = ["Nasional", "Provinsi", "Kabupaten/Kota"]
-    selected_level = st.radio("Tingkat Wilayah", level_options)
+    selected_level = st.radio("Tingkat Wilayah", level_options, key="filter_level")
     selected_prov = None
     selected_kabkot = None
     if selected_level in ["Provinsi", "Kabupaten/Kota"]:
-        selected_prov = st.selectbox("Pilih Provinsi", sorted(geo_structure.keys()))
+        # Sort provinces by their code (kd_prov) — always from PUK reference
+        prov_df = df_geo[df_geo['nm_prov'] != 'NASIONAL'][['kd_prov', 'nm_prov']].drop_duplicates().sort_values('kd_prov')
+        prov_list = prov_df['nm_prov'].tolist()
+        selected_prov = st.selectbox("Pilih Provinsi", prov_list, key="filter_prov")
         if selected_level == "Kabupaten/Kota":
-            selected_kabkot = st.selectbox("Pilih Kabupaten/Kota", geo_structure[selected_prov])
+            # Sort kabupaten/kota by their code (kd_kabkot) — always from PUK reference
+            kab_df = df_geo[(df_geo['nm_prov'] == selected_prov) & (df_geo['nm_kabkot'] != '-')][['kd_kabkot', 'nm_kabkot']].drop_duplicates().sort_values('kd_kabkot')
+            kab_list = kab_df['nm_kabkot'].tolist()
+            selected_kabkot = st.selectbox("Pilih Kabupaten/Kota", kab_list, key="filter_kabkot")
 
 # ─── Resolve Location Name ──────────────────────────────────────────────────────
 loc_name = "Indonesia"
@@ -476,12 +483,13 @@ elif is_pyb:
             'sta_7': 'Pekerja Keluarga',
         }
         sta_vals = [data[c].sum() if c in data.columns else 0 for c in sta_map]
-        sdf = pd.DataFrame({'Status': list(sta_map.values()), 'Jumlah': sta_vals})
-        fig = px.pie(sdf, values='Jumlah', names='Status', hole=0.55, color_discrete_sequence=BLUE_SEQ)
-        fig.update_traces(textposition='inside', textinfo='percent+label', textfont_size=10,
-                          hovertemplate='<b>%{label}</b><br>Jumlah: %{value:,.0f}<extra></extra>')
+        sdf = pd.DataFrame({'Status': list(sta_map.values()), 'Jumlah': sta_vals}).sort_values('Jumlah')
+        fig = px.bar(sdf, x='Jumlah', y='Status', orientation='h', text='Jumlah',
+                     color_discrete_sequence=BLUE_SEQ)
+        fig.update_traces(texttemplate='%{text:,.0f}', textposition='outside', textfont_size=10,
+                          hovertemplate='<b>%{y}</b><br>Jumlah: %{x:,.0f}<extra></extra>')
         apply_chart(fig)
-        fig.update_layout(title=dict(text="📋 Status Pekerjaan", font=dict(size=14)), showlegend=False)
+        fig.update_layout(title=dict(text="📋 Status Pekerjaan", font=dict(size=14)), xaxis_title="", yaxis_title="")
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
@@ -526,9 +534,9 @@ elif is_pyb:
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
 
-    # ── PYB Row 4: Jam Kerja ─────────────────────────────────────────────────────
-    r4c1, r4c2 = st.columns(2)
-    with r4c1:
+    # ── PYB Row 4: Jam Kerja (centered, full-width single column) ────────────────
+    _, r4center, _ = st.columns([1, 2, 1])
+    with r4center:
         jam_map = {'jam_114': '1–14', 'jam_1534': '15–34', 'jam_3540': '35–40', 'jam_4148': '41–48', 'jam_>48': '>48'}
         jmv = [data[c].sum() if c in data.columns else 0 for c in jam_map]
         jmdf = pd.DataFrame({'Jam/Minggu': list(jam_map.values()), 'Jumlah': jmv})
