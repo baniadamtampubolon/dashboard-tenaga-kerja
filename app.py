@@ -117,6 +117,16 @@ def apply_chart(fig, height=None):
     fig.update_layout(**kw)
     return fig
 
+def fmt_compact(val):
+    """Format number compactly: 1_500_000 → '1.5M', 250_000 → '250K', 8_300 → '8.3K'."""
+    if val >= 1_000_000:
+        v = val / 1_000_000
+        return f"{v:.1f}M" if v % 1 else f"{int(v)}M"
+    elif val >= 1_000:
+        v = val / 1_000
+        return f"{v:.1f}K" if v % 1 else f"{int(v)}K"
+    return f"{val:,.0f}"
+
 # ─── Inject CSS ──────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <style>
@@ -351,11 +361,19 @@ if is_main:
     t_pt  = _trend(df_pt).groupby('thn')['total'].sum().reset_index()
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=t_puk['thn'], y=t_puk['total'], name="PUK", line=dict(color='#AED6F1', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=t_ak['thn'],  y=t_ak['total'],  name="AK",  line=dict(color='#5DADE2', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=t_pyb['thn'], y=t_pyb['total'], name="Bekerja (PYB)", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
-                             fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
-    fig.add_trace(go.Scatter(x=t_pt['thn'],  y=t_pt['total'],  name="Penganggur (PT)", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_puk['thn'], y=t_puk['total'], name="PUK",
+        text=[fmt_compact(v) for v in t_puk['total']], textposition='top center', textfont=dict(size=8, color='#AED6F1'),
+        line=dict(color='#AED6F1', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_ak['thn'],  y=t_ak['total'],  name="AK",
+        text=[fmt_compact(v) for v in t_ak['total']], textposition='top center', textfont=dict(size=8, color='#5DADE2'),
+        line=dict(color='#5DADE2', width=2, dash='dot', shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=t_pyb['thn'], y=t_pyb['total'], name="Bekerja (PYB)",
+        text=[fmt_compact(v) for v in t_pyb['total']], textposition='bottom center', textfont=dict(size=8, color='#005BAB'),
+        line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=6),
+        fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
+    fig.add_trace(go.Scatter(x=t_pt['thn'],  y=t_pt['total'],  name="Penganggur (PT)",
+        text=[fmt_compact(v) for v in t_pt['total']], textposition='bottom center', textfont=dict(size=8, color=ACCENT_RED),
+        line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=5)))
     apply_chart(fig, height=420)
     fig.update_layout(title=dict(text=f"📈 Tren Ketenagakerjaan — {loc_name} (2018–2025)", font=dict(size=15)))
     st.plotly_chart(fig, use_container_width=True)
@@ -409,9 +427,11 @@ with r1c1:
     age_vals = [data[c].sum() for c in age_cols]
     adf = pd.DataFrame({'Usia': list(age_cols.values()), 'Jumlah': age_vals})
 
-    fig = px.area(adf, x='Usia', y='Jumlah', markers=True, color_discrete_sequence=['#005BAB'])
+    fig = px.area(adf, x='Usia', y='Jumlah', markers=True, color_discrete_sequence=['#005BAB'],
+                  text=[fmt_compact(v) for v in age_vals])
     fig.update_traces(line_width=2.5, line_shape='spline', marker=dict(size=5),
                       fillcolor='rgba(0,91,171,0.12)',
+                      textposition='top center', textfont=dict(size=7, color=font_color),
                       hovertemplate='<b>%{x} tahun</b><br>Jumlah: %{y:,.0f}<extra></extra>')
     apply_chart(fig)
     fig.update_layout(title=dict(text="👤 Distribusi Kelompok Usia", font=dict(size=14)),
@@ -587,32 +607,50 @@ if is_puk:
     ts_pyb = _get_trend(df_pyb).groupby('thn')['total'].sum().reset_index()
     ts_pt  = _get_trend(df_pt).groupby('thn')['total'].sum().reset_index()
 
-    fig.add_trace(go.Scatter(x=ts_puk['thn'], y=ts_puk['total'],   name="Total PUK",   line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts_pyb['thn'], y=ts_pyb['total'], name="Bekerja (PYB)", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
-                             fill='tozeroy', fillcolor='rgba(0,91,171,0.06)'))
-    fig.add_trace(go.Scatter(x=ts_pt['thn'], y=ts_pt['total'],  name="Pengangguran (PT)", line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts_puk['thn'], y=ts_puk['total'],   name="Total PUK",
+        text=[fmt_compact(v) for v in ts_puk['total']], textposition='top center', textfont=dict(size=8, color='#AED6F1'),
+        line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts_pyb['thn'], y=ts_pyb['total'], name="Bekerja (PYB)",
+        text=[fmt_compact(v) for v in ts_pyb['total']], textposition='bottom center', textfont=dict(size=8, color='#005BAB'),
+        line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=6),
+        fill='tozeroy', fillcolor='rgba(0,91,171,0.06)'))
+    fig.add_trace(go.Scatter(x=ts_pt['thn'], y=ts_pt['total'],  name="Pengangguran (PT)",
+        text=[fmt_compact(v) for v in ts_pt['total']], textposition='bottom center', textfont=dict(size=8, color=ACCENT_RED),
+        line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=5)))
     title = f"📈 Tren PUK — {loc_name}"
 elif is_pt:
     ts = trend_df.groupby('thn')[['total', 'kat_mp', 'kat_mu', 'kat_pa', 'kat_bmb']].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'],  name="Total PT",             line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mp'], name="Mencari Pekerjaan",     line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mu'], name="Mempersiapkan Usaha",   line=dict(color='#2E86DE', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_pa'], name="Putus Asa",             line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_bmb'],name="Diterima Belum Bekerja",line=dict(color=ACCENT_AMBER, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'],  name="Total PT",
+        line=dict(color='#AED6F1', dash='dot', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mp'], name="Mencari Pekerjaan",
+        line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=5)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_mu'], name="Mempersiapkan Usaha",
+        line=dict(color='#2E86DE', width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_pa'], name="Putus Asa",
+        line=dict(color=ACCENT_RED, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['kat_bmb'],name="Diterima Belum Bekerja",
+        line=dict(color=ACCENT_AMBER, width=2, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=4)))
     title = f"📈 Tren PT — {loc_name}"
 elif is_pyb:
     ts = trend_df.groupby('thn')['total'].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total PYB", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
-                             fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total PYB",
+        text=[fmt_compact(v) for v in ts['total']], textposition='top center', textfont=dict(size=8, color='#005BAB'),
+        line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=6),
+        fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
     title = f"📈 Tren Penduduk Bekerja — {loc_name}"
 else:
     ts = trend_df.groupby('thn')['total'].sum().reset_index()
-    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total AK", line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers', marker=dict(size=6),
-                             fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
+    fig.add_trace(go.Scatter(x=ts['thn'], y=ts['total'], name="Total AK",
+        text=[fmt_compact(v) for v in ts['total']], textposition='top center', textfont=dict(size=8, color='#005BAB'),
+        line=dict(color='#005BAB', width=3, shape='spline', smoothing=0.8), mode='lines+markers+text', marker=dict(size=6),
+        fill='tozeroy', fillcolor='rgba(0,91,171,0.08)'))
     title = f"📈 Tren Angkatan Kerja — {loc_name}"
 
 apply_chart(fig, height=400)
-fig.update_layout(title=dict(text=title, font=dict(size=15)), xaxis_title="Tahun", yaxis_title="Jumlah Jiwa")
+layout_kw = dict(title=dict(text=title, font=dict(size=15)), xaxis_title="Tahun", yaxis_title="Jumlah Jiwa")
+if is_pt:
+    layout_kw['hovermode'] = 'x unified'
+fig.update_layout(**layout_kw)
 st.plotly_chart(fig, use_container_width=True)
 
 # ── Footer ───────────────────────────────────────────────────────────────────────
